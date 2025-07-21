@@ -1,103 +1,298 @@
-import Image from "next/image";
+'use client';
+
+import React, { useRef, useState, useEffect } from 'react';
+import { useVLibrasPlayer } from 'vlibras-player-nextjs';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [text, setText] = useState('Olá! Bem-vindo ao teste do VLibras Player NextJS.');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const hasInitialized = useRef(false);
+  
+  const { 
+    translate, 
+    play, 
+    pause, 
+    stop, 
+    player, 
+    isLoading, 
+    error
+  } = useVLibrasPlayer({
+    autoInit: true,
+    containerRef: containerRef as React.RefObject<HTMLElement>
+  });
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Limpar duplicações no container
+  useEffect(() => {
+    if (containerRef.current && !hasInitialized.current) {
+      hasInitialized.current = true;
+      
+      // Aguardar um pouco e então limpar duplicações
+      const cleanupTimer = setTimeout(() => {
+        if (containerRef.current) {
+          const children = containerRef.current.children;
+          // Se há mais de um elemento filho, remover duplicatas
+          if (children.length > 1) {
+            console.log(`🧹 Removendo ${children.length - 1} duplicação(ões)`);
+            // Manter apenas o primeiro elemento
+            for (let i = children.length - 1; i > 0; i--) {
+              children[i].remove();
+            }
+          }
+        }
+      }, 1000); // Aguardar 1 segundo para o player carregar
+
+      return () => clearTimeout(cleanupTimer);
+    }
+  }, [player]);
+
+  const handleTranslate = async () => {
+    if (!text.trim()) return;
+    
+    setIsTranslating(true);
+    try {
+      await translate(text);
+    } catch (error) {
+      console.error('Erro na tradução:', error);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const predefinedTexts = [
+    'Olá! Como você está?',
+    'Bem-vindos ao VLibras Player NextJS!',
+    'Esta é uma demonstração da biblioteca de tradução para Libras.',
+    'A acessibilidade é fundamental para uma web inclusiva.',
+    'Obrigado por testar nossa biblioteca!'
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-4">
+            🤟 VLibras Player NextJS
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-2">
+            Teste da biblioteca de tradução para Libras
+          </p>
+          <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900 px-4 py-2 rounded-full">
+            <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+              Versão: 2.1.0 ✨
+            </span>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Player Container - Ocupa 2 colunas */}
+          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
+              📺 Player VLibras
+            </h2>
+            
+            <div 
+              ref={containerRef} 
+              className="vlibras-container w-full h-[500px] bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg mb-4"
+            >
+              {/* O player VLibras será carregado aqui automaticamente */}
+            </div>
+
+            {/* Status */}
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-gray-600 dark:text-gray-300">Status:</span>
+                  <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                    isLoading ? 'bg-yellow-100 text-yellow-800' : 
+                    error ? 'bg-red-100 text-red-800' : 
+                    'bg-green-100 text-green-800'
+                  }`}>
+                    {isLoading ? 'Carregando' : error ? 'Erro' : 'Pronto'}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-600 dark:text-gray-300">Carregado:</span>
+                  <span className="ml-2 text-gray-800 dark:text-gray-200">
+                    {player?.loaded ? 'Sim' : 'Não'}
+                  </span>
+                </div>
+              </div>
+              {error && (
+                <div className="mt-2 p-2 bg-red-50 dark:bg-red-900 rounded text-red-800 dark:text-red-200 text-xs">
+                  {error}
+                </div>
+              )}
+            </div>
+
+            {/* Controls */}
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={handleTranslate}
+                disabled={isTranslating || !text.trim() || isLoading}
+                className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                {isTranslating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Traduzindo...
+                  </>
+                ) : (
+                  <>
+                    🔄 Traduzir
+                  </>
+                )}
+              </button>
+              
+              <button
+                onClick={() => play()}
+                disabled={isLoading}
+                className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                ▶️ Play
+              </button>
+              
+              <button
+                onClick={() => pause()}
+                disabled={isLoading}
+                className="bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                ⏸️ Pausar
+              </button>
+              
+              <button
+                onClick={() => stop()}
+                disabled={isLoading}
+                className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                ⏹️ Parar
+              </button>
+            </div>
+          </div>
+
+          {/* Text Input and Controls - Ocupa 1 coluna */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
+              ✏️ Texto para Tradução
+            </h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Digite ou selecione um texto:
+                </label>
+                <textarea
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Digite o texto para traduzir para Libras..."
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows={4}
+                />
+              </div>
+
+              {/* Predefined Texts */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Textos pré-definidos:
+                </label>
+                <div className="grid gap-2">
+                  {predefinedTexts.map((predefinedText, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setText(predefinedText)}
+                      className="text-left p-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors text-sm"
+                    >
+                      {predefinedText}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Ações rápidas:
+                </label>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => setText('')}
+                    className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm"
+                  >
+                    🗑️ Limpar
+                  </button>
+                  <button
+                    onClick={() => setText('Demonstração da acessibilidade digital através da Língua Brasileira de Sinais.')}
+                    className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm"
+                  >
+                    📝 Texto exemplo
+                  </button>
+                </div>
+              </div>
+
+              {/* Character count */}
+              <div className="text-right text-sm text-gray-500 dark:text-gray-400">
+                {text.length} caracteres
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-8 text-center bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+            📚 Sobre a Biblioteca
+          </h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-4">
+            Esta é uma demonstração da biblioteca <strong>vlibras-player-nextjs v2.1.0</strong>, 
+            uma solução moderna para integração do VLibras em aplicações Next.js e React.
+          </p>
+          <div className="flex justify-center gap-4 flex-wrap">
+            <a
+              href="https://www.npmjs.com/package/vlibras-player-nextjs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              📦 NPM Package
+            </a>
+            <a
+              href="https://github.com/Luca-Sousa/vlibras-player-web-nextjs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              💻 GitHub
+            </a>
+            <a
+              href="/hook"
+              className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              ⚛️ Hook useVLibrasPlayer
+            </a>
+            <a
+              href="/advanced"
+              className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              🚀 Exemplo Avançado
+            </a>
+            <a
+              href="/direct"
+              className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              🔧 Uso Direto
+            </a>
+            <a
+              href="https://www.vlibras.gov.br/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              🤟 VLibras
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
