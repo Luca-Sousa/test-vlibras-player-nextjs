@@ -1,50 +1,24 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { useVLibrasPlayer } from 'vlibras-player-nextjs';
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState('Olá! Bem-vindo ao teste do VLibras Player NextJS.');
   const [isTranslating, setIsTranslating] = useState(false);
-  const hasInitialized = useRef(false);
   
   const { 
     translate, 
     play, 
     pause, 
     stop, 
-    player, 
     isLoading, 
-    error
+    error,
   } = useVLibrasPlayer({
     autoInit: true,
-    containerRef: containerRef as React.RefObject<HTMLElement>
+    containerRef: containerRef as React.RefObject<HTMLElement>,
   });
-
-  // Limpar duplicações no container
-  useEffect(() => {
-    if (containerRef.current && !hasInitialized.current) {
-      hasInitialized.current = true;
-      
-      // Aguardar um pouco e então limpar duplicações
-      const cleanupTimer = setTimeout(() => {
-        if (containerRef.current) {
-          const children = containerRef.current.children;
-          // Se há mais de um elemento filho, remover duplicatas
-          if (children.length > 1) {
-            console.log(`🧹 Removendo ${children.length - 1} duplicação(ões)`);
-            // Manter apenas o primeiro elemento
-            for (let i = children.length - 1; i > 0; i--) {
-              children[i].remove();
-            }
-          }
-        }
-      }, 1000); // Aguardar 1 segundo para o player carregar
-
-      return () => clearTimeout(cleanupTimer);
-    }
-  }, [player]);
 
   const handleTranslate = async () => {
     if (!text.trim()) return;
@@ -78,44 +52,61 @@ export default function Home() {
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-2">
             Teste da biblioteca de tradução para Libras
           </p>
-          <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900 px-4 py-2 rounded-full">
-            <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-              Versão: 2.1.0 ✨
+          <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900 px-4 py-2 rounded-full">
+            <span className="text-sm font-medium text-green-800 dark:text-green-200">
+              Versão: 2.1.1 🔧 (Problema de duplicação corrigido!)
             </span>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Player Container - Ocupa 2 colunas */}
-          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 flex flex-col">
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
               📺 Player VLibras
             </h2>
-            
-            <div 
-              ref={containerRef} 
-              className="vlibras-container w-full h-[500px] bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg mb-4"
+
+            <div
+              ref={containerRef}
+              className="flex-1 w-full lg:max-h-[355px] bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden"
             >
-              {/* O player VLibras será carregado aqui automaticamente */}
+              {isLoading && (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                    <p className="text-gray-600 dark:text-gray-300">
+                      Carregando player...
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Status */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-4">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mt-4 mb-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium text-gray-600 dark:text-gray-300">Status:</span>
-                  <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                    isLoading ? 'bg-yellow-100 text-yellow-800' : 
-                    error ? 'bg-red-100 text-red-800' : 
-                    'bg-green-100 text-green-800'
-                  }`}>
-                    {isLoading ? 'Carregando' : error ? 'Erro' : 'Pronto'}
+                  <span className="font-medium text-gray-600 dark:text-gray-300">
+                    Status:
+                  </span>
+                  <span
+                    className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                      isLoading
+                        ? "bg-yellow-100 text-yellow-800"
+                        : error
+                        ? "bg-red-100 text-red-800"
+                        : "bg-green-100 text-green-800"
+                    }`}
+                  >
+                    {isLoading ? "Carregando" : error ? "Erro" : "Pronto"}
                   </span>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-600 dark:text-gray-300">Carregado:</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-300">
+                    Versão:
+                  </span>
                   <span className="ml-2 text-gray-800 dark:text-gray-200">
-                    {player?.loaded ? 'Sim' : 'Não'}
+                    v2.1.1 (Corrigida)
                   </span>
                 </div>
               </div>
@@ -139,12 +130,10 @@ export default function Home() {
                     Traduzindo...
                   </>
                 ) : (
-                  <>
-                    🔄 Traduzir
-                  </>
+                  <>🔄 Traduzir</>
                 )}
               </button>
-              
+
               <button
                 onClick={() => play()}
                 disabled={isLoading}
@@ -152,7 +141,7 @@ export default function Home() {
               >
                 ▶️ Play
               </button>
-              
+
               <button
                 onClick={() => pause()}
                 disabled={isLoading}
@@ -160,7 +149,7 @@ export default function Home() {
               >
                 ⏸️ Pausar
               </button>
-              
+
               <button
                 onClick={() => stop()}
                 disabled={isLoading}
@@ -176,7 +165,7 @@ export default function Home() {
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
               ✏️ Texto para Tradução
             </h2>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -216,13 +205,17 @@ export default function Home() {
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   <button
-                    onClick={() => setText('')}
+                    onClick={() => setText("")}
                     className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm"
                   >
                     🗑️ Limpar
                   </button>
                   <button
-                    onClick={() => setText('Demonstração da acessibilidade digital através da Língua Brasileira de Sinais.')}
+                    onClick={() =>
+                      setText(
+                        "Demonstração da acessibilidade digital através da Língua Brasileira de Sinais."
+                      )
+                    }
                     className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm"
                   >
                     📝 Texto exemplo
@@ -244,8 +237,9 @@ export default function Home() {
             📚 Sobre a Biblioteca
           </h3>
           <p className="text-gray-600 dark:text-gray-300 mb-4">
-            Esta é uma demonstração da biblioteca <strong>vlibras-player-nextjs v2.1.0</strong>, 
-            uma solução moderna para integração do VLibras em aplicações Next.js e React.
+            Esta é uma demonstração da biblioteca{" "}
+            <strong>vlibras-player-nextjs v2.1.1</strong>, uma solução moderna
+            para integração do VLibras em aplicações Next.js e React.
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
             <a
