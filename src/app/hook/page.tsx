@@ -1,322 +1,696 @@
-'use client';
+"use client";
 
-import React, { useState, useRef } from 'react';
-import { useVLibrasPlayer } from 'vlibras-player-nextjs';
-import Link from 'next/link';
+import React, { useRef, useState } from "react";
+import { useVLibrasPlayer } from "vlibras-player-nextjs";
 
-export default function HookUsagePage() {
+/**
+ * 🪝 DEMONSTRAÇÃO OFICIAL DO HOOK VLIBRAS PLAYER
+ *
+ * Demonstração completa do Hook useVLibrasPlayer para Next.js
+ *
+ * ✅ FUNCIONALIDADES:
+ * - Tradução automática de texto para Libras via Hook
+ * - Controles completos de reprodução (play, pause, resume, restart, stop)
+ * - Sistema avançado de eventos e callbacks via Hook
+ * - Interface visual com logs em tempo real
+ * - Cores semânticas para melhor experiência
+ * - Controles inteligentes com ativação contextual
+ */
+
+export default function VLibrasPlayerHookDemo() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [text, setText] = useState('Demonstração do hook useVLibrasPlayer.');
-  const [isTranslating, setIsTranslating] = useState(false);
-  
-  const { 
-    translate, 
-    play, 
-    pause, 
-    stop, 
-    player, 
-    isLoading, 
-    error 
+  const [eventLog, setEventLog] = useState<string[]>([]);
+  const [currentStatus, setCurrentStatus] = useState<string>("Não iniciado");
+
+  const addLog = (
+    message: string,
+    type:
+      | "info"
+      | "success"
+      | "error"
+      | "warning"
+      | "separator"
+      | "start"
+      | "stop"
+      | "pause"
+      | "resume"
+      | "restart" = "info"
+  ) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const emoji = {
+      info: "ℹ️",
+      success: "✅",
+      error: "❌",
+      warning: "⚠️",
+      separator: "📋",
+      start: "🟢",
+      stop: "🔴",
+      pause: "🟠",
+      resume: "🟡",
+      restart: "🔵",
+    }[type];
+
+    setEventLog((prev) =>
+      [...prev, `${timestamp} ${emoji} ${message}`].slice(-50)
+    );
+  };
+
+  const {
+    player,
+    isLoading,
+    error,
+    isReady,
+    isTranslating,
+    isPlaying,
+    // Métodos principais
+    translate,
+    pause,
+    resume,
+    stop,
+    restart,
+    initializePlayer,
   } = useVLibrasPlayer({
-    autoInit: true,
-    containerRef: containerRef as React.RefObject<HTMLElement>, // ✅ Nova API v2.1.0
-    onLoad: () => console.log('🎯 Hook: Player carregado'),
-    onTranslateStart: () => {
-      console.log('🔄 Hook: Iniciando tradução');
-      setIsTranslating(true);
+    containerRef: containerRef as React.RefObject<HTMLElement>,
+    autoInit: false, // Inicialização manual
+    // Configurações necessárias (como na demo da classe)
+    targetPath: "/vlibras/target",
+    region: "BR",
+    enableStats: true,
+    // 📋 CALLBACKS PRINCIPAIS via Hook (seguindo padrão da demo da classe)
+    onLoad: () => {
+      addLog(
+        "HOOK: onLoad() - Player completamente pronto via Hook",
+        "success"
+      );
+      setCurrentStatus("Pronto");
     },
-    onTranslateEnd: () => {
-      console.log('✅ Hook: Tradução concluída');
-      setIsTranslating(false);
+    onPlayerError: (err) => {
+      addLog(`HOOK: onPlayerError() - ${err} via Hook (não fatal)`, "warning");
+      // NÃO alterar status - erro pode não ser fatal
     },
-    onError: (error: string) => console.error('❌ Hook: Erro:', error),
+    onTranslationStart: () => {
+      addLog(
+        "HOOK: onTranslationStart() - Tradução iniciada via Hook",
+        "start"
+      );
+      setCurrentStatus("Traduzindo...");
+    },
+    onTranslationEnd: () => {
+      addLog(
+        "HOOK: onTranslationEnd() - Tradução concluída via Hook",
+        "success"
+      );
+      setCurrentStatus("Concluído");
+    },
+    onTranslationError: (err) => {
+      addLog(
+        `HOOK: onTranslationError() - ${err} via Hook (não fatal)`,
+        "warning"
+      );
+      // NÃO alterar status - erro pode não ser fatal (como visto na demo da classe)
+    },
+    onPlay: () => {
+      addLog("HOOK: onPlay() - Reprodução iniciada via Hook", "start");
+      setCurrentStatus("Reproduzindo...");
+    },
+    onPause: () => {
+      addLog("HOOK: onPause() - Reprodução pausada via Hook", "pause");
+      setCurrentStatus("Pausado");
+    },
+    onResume: () => {
+      addLog("HOOK: onResume() - Reprodução retomada via Hook", "resume");
+      setCurrentStatus("Reproduzindo...");
+    },
+    onRestart: () => {
+      addLog("HOOK: onRestart() - Animação reiniciada via Hook", "restart");
+      setCurrentStatus("Reiniciando...");
+    },
+    onStop: () => {
+      addLog("HOOK: onStop() - Reprodução parada via Hook", "stop");
+      setCurrentStatus("Parado");
+    },
   });
 
-  const handleTranslate = async () => {
-    if (!text.trim()) return;
-    
+  const handleInitializePlayer = () => {
+    addLog("═══════════════════════════════════════", "separator");
+    addLog("🪝 INICIALIZANDO VLIBRAS PLAYER VIA HOOK", "separator");
+    addLog("═══════════════════════════════════════", "separator");
+    setCurrentStatus("Inicializando...");
+    initializePlayer();
+  };
+
+  const testTranslation = async (text: string) => {
+    if (!isReady) {
+      addLog("Hook: Player não está pronto para traduzir", "warning");
+      return;
+    }
+
+    addLog("═══════════════════════════════════════", "separator");
+    addLog(`🪝 TRADUZINDO VIA HOOK: "${text}"`, "separator");
+    addLog("═══════════════════════════════════════", "separator");
+    addLog("📋 Sequência de eventos esperada via Hook:", "info");
+    addLog("1️⃣ onTranslationStart (via Hook)", "info");
+    addLog("2️⃣ onPlay (quando Unity inicia via Hook)", "info");
+    addLog("3️⃣ Reprodução da animação", "info");
+    addLog("4️⃣ onStop (quando Unity termina via Hook)", "info");
+    addLog("5️⃣ onTranslationEnd (quando tradução finaliza via Hook)", "info");
+    addLog("───────────────────────────────────────", "separator");
+    addLog("🔥 INICIANDO TRADUÇÃO VIA HOOK...", "info");
+
     try {
       await translate(text);
+      addLog(`Hook: Tradução de "${text}" concluída!`, "success");
+      addLog("───────────────────────────────────────", "separator");
+      addLog("✅ TRADUÇÃO VIA HOOK FINALIZADA!", "separator");
+      addLog("═══════════════════════════════════════", "separator");
     } catch (error) {
-      console.error('Erro na tradução:', error);
+      addLog(`Hook: Erro na tradução: ${error}`, "error");
+      addLog("───────────────────────────────────────", "separator");
+      addLog("❌ TRADUÇÃO VIA HOOK FINALIZADA COM ERRO!", "separator");
+      addLog("═══════════════════════════════════════", "separator");
     }
   };
 
+  const testRestart = () => {
+    if (!isReady) {
+      addLog("Hook: Player não está pronto para reiniciar", "warning");
+      return;
+    }
+
+    addLog("═══════════════════════════════════════", "separator");
+    addLog("🪝 TESTANDO RESTART VIA HOOK", "separator");
+    addLog("═══════════════════════════════════════", "separator");
+    addLog("📋 Sequência esperada do restart via Hook:", "info");
+    addLog("1️⃣ Chamada restart() via Hook", "info");
+    addLog("2️⃣ onRestart() CALLBACK via Hook", "info");
+    addLog("3️⃣ Stop interno (via Hook)", "info");
+    addLog("4️⃣ Play da glosa atual (via Hook)", "info");
+    addLog("───────────────────────────────────────", "separator");
+    addLog("🔥 EXECUTANDO RESTART VIA HOOK...", "restart");
+
+    restart();
+  };
+
+  const testTexts = [
+    "Olá, mundo!",
+    "Como você está?",
+    "VLibras Hook é incrível!",
+    "Acessibilidade com Hook!",
+  ];
+
+  // Estados derivados para controles inteligentes via Hook
+  const isPaused = player?.status === "paused";
+  const canPause = isReady && isPlaying && !isPaused;
+  const canResume = isReady && isPaused;
+  const canStop = isReady && (isPlaying || isPaused);
+  const canRestart = isReady && (isPlaying || isPaused);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 dark:from-gray-900 dark:to-green-900 p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-4">
-            ⚛️ Hook useVLibrasPlayer
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            🪝 VLibras Player Hook para Next.js
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-2">
-            Demonstração do método recomendado (Hook React)
+          <p className="text-gray-600">
+            Biblioteca moderna para tradução de texto em Libras usando React
+            Hook
           </p>
-          <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900 px-4 py-2 rounded-full">
-            <span className="text-sm font-medium text-green-800 dark:text-green-200">
-              Método: useVLibrasPlayer()
-            </span>
+          <div className="mt-4 flex flex-wrap gap-2 justify-center">
+            <div className="px-4 py-2 bg-green-100 text-green-800 rounded-lg text-sm">
+              ✅ Controles Inteligentes via Hook
+            </div>
+            <div className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm">
+              🪝 Sistema de Hooks React
+            </div>
+            <div className="px-4 py-2 bg-purple-100 text-purple-800 rounded-lg text-sm">
+              🎨 Interface Visual
+            </div>
+            <div className="px-4 py-2 bg-orange-100 text-orange-800 rounded-lg text-sm">
+              � Logs em Tempo Real
+            </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-6">
-          {/* Comparison Table */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
-              📊 Comparação dos Métodos
-            </h2>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-300 dark:border-gray-600">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-gray-700">
-                    <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left">Característica</th>
-                    <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center bg-green-50 dark:bg-green-900">Hook (Recomendado)</th>
-                    <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center bg-purple-50 dark:bg-purple-900">Classe Direta</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium">Facilidade de Uso</td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center text-green-600">✅ Muito Fácil</td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center text-yellow-600">⚠️ Médio</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium">Gerenciamento de Estado</td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center text-green-600">✅ Automático</td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center text-red-600">❌ Manual</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium">Cleanup</td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center text-green-600">✅ Automático</td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center text-red-600">❌ Manual</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium">Controle Avançado</td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center text-yellow-600">⚠️ Limitado</td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center text-green-600">✅ Completo</td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium">Inicialização</td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center text-green-600">✅ autoInit</td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center text-yellow-600">⚠️ Manual</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Player Status */}
-          <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
-              📺 Status do Player (Hook)
-            </h2>
-            
-            <div className="bg-green-50 dark:bg-green-900 rounded-lg p-4 mb-4">
-              <div className="grid md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="font-medium text-gray-600 dark:text-gray-300">Carregando:</span>
-                  <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                    isLoading ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
-                  }`}>
-                    {isLoading ? 'Sim' : 'Não'}
-                  </span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Player */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-800">
+                🪝 VLibras Player (Hook)
+              </h2>
+              <div className="text-right">
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    isReady
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {isReady ? "✅ Pronto" : "⏳ Carregando"}
+                </span>
+                <div className="text-xs text-gray-600 mt-1">
+                  Status: {currentStatus}
                 </div>
-                <div>
-                  <span className="font-medium text-gray-600 dark:text-gray-300">Traduzindo:</span>
-                  <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                    isTranslating ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {isTranslating ? 'Sim' : 'Não'}
-                  </span>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-600 dark:text-gray-300">Player:</span>
-                  <span className="ml-2 text-gray-800 dark:text-gray-200">
-                    {player ? 'Disponível' : 'Indisponível'}
-                  </span>
+                <div className="text-xs mt-1 flex gap-2">
+                  {isLoading && (
+                    <span className="text-blue-600">🔄 Carregando</span>
+                  )}
+                  {isTranslating && (
+                    <span className="text-green-600">🔄 Traduzindo</span>
+                  )}
+                  {isPlaying && (
+                    <span className="text-blue-600">▶️ Reproduzindo</span>
+                  )}
+                  {isPaused && (
+                    <span className="text-orange-600">⏸️ Pausado</span>
+                  )}
+                  {error && <span className="text-red-600">❌ Erro</span>}
                 </div>
               </div>
+            </div>
+
+            <div
+              ref={containerRef}
+              className="w-full h-80 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center mb-4"
+              style={{ minHeight: "320px" }}
+            >
+              {!isReady && !isLoading && !error && (
+                <div className="text-center">
+                  <p className="text-gray-600 text-sm mb-3">
+                    Player Hook não iniciado
+                  </p>
+                  <button
+                    onClick={handleInitializePlayer}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    🪝 Inicializar Player VLibras via Hook
+                  </button>
+                </div>
+              )}
+
+              {isLoading && (
+                <div className="text-center">
+                  <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-3"></div>
+                  <p className="text-gray-600 text-sm">
+                    Carregando Unity WebGL via Hook...
+                  </p>
+                </div>
+              )}
+
+              {isReady && (
+                <div className="text-center">
+                  <p className="text-gray-600 text-sm">
+                    ✅ Player Hook pronto para tradução!
+                  </p>
+                </div>
+              )}
+
               {error && (
-                <div className="mt-2 p-2 bg-red-50 dark:bg-red-900 rounded text-red-800 dark:text-red-200 text-xs">
-                  {error}
+                <div className="text-center">
+                  <p className="text-red-600 text-sm mb-3">❌ Erro: {error}</p>
+                  <button
+                    onClick={handleInitializePlayer}
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    � Tentar Novamente
+                  </button>
                 </div>
               )}
             </div>
 
-            {/* Virtual Player Display */}
-            <div 
-              ref={containerRef}
-              className="vlibras-container w-full h-64 bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center"
-            >
-              <div className="text-center">
-                <div className="text-6xl mb-4">🤟</div>
-                <p className="text-gray-500 dark:text-gray-400 mb-2">
-                  Player VLibras (Hook useVLibrasPlayer)
-                </p>
-                <p className="text-xs text-gray-400">
-                  {isLoading ? 'Inicializando...' : 
-                   isTranslating ? 'Traduzindo...' : 
-                   'Pronto para uso'}
-                </p>
+            {/* Controles */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                {testTexts.map((text, index) => (
+                  <button
+                    key={index}
+                    onClick={() => testTranslation(text)}
+                    disabled={!isReady}
+                    className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white px-3 py-2 rounded text-sm transition-colors"
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
+
+              {/* Controles com habilitação inteligente */}
+              <div className="grid grid-cols-5 gap-1">
+                <button
+                  onClick={pause}
+                  disabled={!canPause}
+                  className={`px-2 py-2 rounded text-xs transition-colors ${
+                    canPause
+                      ? "bg-orange-500 hover:bg-orange-600 text-white"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  title={
+                    canPause
+                      ? "Pausar reprodução via Hook"
+                      : "Não há reprodução para pausar"
+                  }
+                >
+                  ⏸️ Pause
+                </button>
+                <button
+                  onClick={resume}
+                  disabled={!canResume}
+                  className={`px-2 py-2 rounded text-xs transition-colors ${
+                    canResume
+                      ? "bg-yellow-500 hover:bg-yellow-600 text-white"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  title={
+                    canResume
+                      ? "Retomar reprodução pausada via Hook"
+                      : "Não há reprodução pausada"
+                  }
+                >
+                  ▶️ Resume
+                </button>
+                <button
+                  onClick={testRestart}
+                  disabled={!canRestart}
+                  className={`px-2 py-2 rounded text-xs transition-colors ${
+                    canRestart
+                      ? "bg-blue-500 hover:bg-blue-600 text-white"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  title={
+                    canRestart
+                      ? "Reiniciar animação atual via Hook"
+                      : "Não há animação para reiniciar"
+                  }
+                >
+                  🔄 Restart
+                </button>
+                <button
+                  onClick={stop}
+                  disabled={!canStop}
+                  className={`px-2 py-2 rounded text-xs transition-colors ${
+                    canStop
+                      ? "bg-red-500 hover:bg-red-600 text-white"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  title={
+                    canStop
+                      ? "Parar reprodução via Hook"
+                      : "Não há reprodução para parar"
+                  }
+                >
+                  ⏹️ Stop
+                </button>
+                <button
+                  onClick={() => {
+                    setEventLog([]);
+                    addLog(
+                      "═══════════════════════════════════════",
+                      "separator"
+                    );
+                    addLog(
+                      "�️ LOG LIMPO - PRONTO PARA NOVOS TESTES",
+                      "separator"
+                    );
+                    addLog(
+                      "═══════════════════════════════════════",
+                      "separator"
+                    );
+                  }}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-2 rounded text-xs transition-colors"
+                >
+                  🗑️ Limpar
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Text Input */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Texto para tradução:
-            </label>
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Digite o texto para traduzir para Libras..."
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-              rows={3}
-            />
-          </div>
-
-          {/* Controls */}
-          <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-800 dark:text-white mb-3">
-              🎮 Controles
-            </h3>
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={handleTranslate}
-                disabled={isTranslating || !text.trim() || isLoading}
-                className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-              >
-                {isTranslating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Traduzindo...
-                  </>
-                ) : (
-                  <>
-                    🔄 Traduzir
-                  </>
-                )}
-              </button>
-              
-              <button
-                onClick={() => play()}
-                disabled={isLoading}
-                className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-              >
-                ▶️ Play
-              </button>
-              
-              <button
-                onClick={() => pause()}
-                disabled={isLoading}
-                className="bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-              >
-                ⏸️ Pausar
-              </button>
-              
-              <button
-                onClick={() => stop()}
-                disabled={isLoading}
-                className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-              >
-                ⏹️ Parar
-              </button>
-            </div>
-          </div>
-
-          {/* Code Example */}
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
-              💻 Código de Exemplo (Hook)
-            </h3>
-            <pre className="text-sm text-gray-600 dark:text-gray-300 overflow-x-auto">
-{`// Hook useVLibrasPlayer (Método Recomendado)
-import { useVLibrasPlayer } from 'vlibras-player-nextjs';
-import { useRef, useEffect } from 'react';
-
-const containerRef = useRef<HTMLDivElement>(null);
-
-const { 
-  translate, 
-  play, 
-  pause, 
-  stop, 
-  player, 
-  isLoading, 
-  error 
-} = useVLibrasPlayer({
-  autoInit: true,
-  onLoad: () => console.log('Player carregado'),
-  onTranslateStart: () => console.log('Traduzindo...'),
-  onTranslateEnd: () => console.log('Tradução concluída'),
-  onError: (error) => console.error('Erro:', error)
-});
-
-// IMPORTANTE: Conectar o player ao container
-useEffect(() => {
-  if (containerRef.current && player) {
-    player.load(containerRef.current);
-  }
-}, [player]);
-
-// Traduzir texto
-await translate('Olá mundo!');
-
-// Controlar reprodução
-play();
-pause();
-stop();`}
-            </pre>
-          </div>
-
-          {/* Quick Examples */}
-          <div className="mt-6">
-            <h3 className="text-lg font-medium text-gray-800 dark:text-white mb-3">
-              📝 Textos de Exemplo
-            </h3>
-            <div className="grid md:grid-cols-2 gap-2">
-              {[
-                'O hook useVLibrasPlayer é o método recomendado.',
-                'Gerenciamento automático de estado e lifecycle.',
-                'Callbacks integrados para todos os eventos.',
-                'Inicialização automática com autoInit.',
-                'Ideal para a maioria dos casos de uso.'
-              ].map((example, index) => (
+          {/* Log de Eventos */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">
+                📋 Log de Eventos em Tempo Real (Hook)
+              </h3>
+              <div className="flex gap-2">
                 <button
-                  key={index}
-                  onClick={() => setText(example)}
-                  className="text-left p-3 bg-green-50 dark:bg-green-900 hover:bg-green-100 dark:hover:bg-green-800 border border-green-200 dark:border-green-700 rounded-lg transition-colors text-sm"
+                  onClick={() => {
+                    const logContainer =
+                      document.querySelector(".log-container");
+                    if (logContainer) {
+                      logContainer.scrollTop = logContainer.scrollHeight;
+                    }
+                  }}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors"
                 >
-                  {example}
+                  ⬇️ Final
                 </button>
-              ))}
+                <button
+                  onClick={() => {
+                    setEventLog([]);
+                    addLog(
+                      "═══════════════════════════════════════",
+                      "separator"
+                    );
+                    addLog(
+                      "🗑️ LOG LIMPO - PRONTO PARA NOVOS TESTES",
+                      "separator"
+                    );
+                    addLog(
+                      "═══════════════════════════════════════",
+                      "separator"
+                    );
+                  }}
+                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition-colors"
+                >
+                  🗑️ Limpar
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto log-container">
+              {eventLog.length === 0 ? (
+                <p className="text-gray-500 text-sm">
+                  Aguardando eventos via Hook...
+                </p>
+              ) : (
+                <div className="space-y-1">
+                  {eventLog.map((log, index) => {
+                    // 🎨 Cores semânticas baseadas no tipo de log
+                    const isHookEvent = log.includes("HOOK:");
+                    const isSeparator =
+                      log.includes("═══") ||
+                      log.includes("───") ||
+                      log.includes("INICIANDO") ||
+                      log.includes("FINALIZADO") ||
+                      log.includes("CONCLUÍDA") ||
+                      log.includes("TESTANDO");
+                    const isError = log.includes("❌") || log.includes("💥");
+                    const isSuccess = log.includes("✅") || log.includes("🎉");
+                    const isWarning = log.includes("⚠️");
+
+                    // Cores semânticas por ação
+                    const isStart =
+                      log.includes("🟢") ||
+                      log.includes("iniciada") ||
+                      log.includes("iniciou");
+                    const isStop =
+                      log.includes("🔴") ||
+                      log.includes("parada") ||
+                      log.includes("terminou");
+                    const isPause =
+                      log.includes("🟠") || log.includes("pausada");
+                    const isResume =
+                      log.includes("🟡") || log.includes("retomada");
+                    const isRestart =
+                      log.includes("🔵") ||
+                      log.includes("reiniciada") ||
+                      log.includes("RESTART");
+
+                    let bgColor = "bg-white";
+                    let textColor = "text-gray-700";
+                    let borderColor = "border-gray-200";
+
+                    if (isSeparator) {
+                      bgColor = "bg-slate-50";
+                      textColor = "text-slate-800 font-semibold";
+                      borderColor = "border-slate-300";
+                    } else if (isRestart) {
+                      bgColor = "bg-blue-50";
+                      textColor = "text-blue-800 font-semibold";
+                      borderColor = "border-blue-300";
+                    } else if (isStart) {
+                      bgColor = "bg-green-50";
+                      textColor = "text-green-800";
+                      borderColor = "border-green-300";
+                    } else if (isStop) {
+                      bgColor = "bg-red-50";
+                      textColor = "text-red-800";
+                      borderColor = "border-red-300";
+                    } else if (isPause) {
+                      bgColor = "bg-orange-50";
+                      textColor = "text-orange-800";
+                      borderColor = "border-orange-300";
+                    } else if (isResume) {
+                      bgColor = "bg-yellow-50";
+                      textColor = "text-yellow-800";
+                      borderColor = "border-yellow-300";
+                    } else if (isHookEvent) {
+                      bgColor = "bg-purple-50";
+                      textColor = "text-purple-700";
+                      borderColor = "border-purple-200";
+                    } else if (isError) {
+                      bgColor = "bg-red-100";
+                      textColor = "text-red-900";
+                      borderColor = "border-red-400";
+                    } else if (isSuccess) {
+                      bgColor = "bg-emerald-50";
+                      textColor = "text-emerald-700";
+                      borderColor = "border-emerald-200";
+                    } else if (isWarning) {
+                      bgColor = "bg-amber-50";
+                      textColor = "text-amber-800";
+                      borderColor = "border-amber-300";
+                    }
+
+                    return (
+                      <div
+                        key={index}
+                        className={`text-xs font-mono ${textColor} ${bgColor} p-2 rounded border ${borderColor} break-words`}
+                      >
+                        {log}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Legenda Melhorada */}
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+              <h4 className="text-base font-bold text-gray-800 mb-3">
+                🎨 Legenda dos Logs (Hook):
+              </h4>
+
+              <div className="mb-4">
+                <h5 className="text-sm font-semibold text-gray-700 mb-2">
+                  🔄 Cores por Ação:
+                </h5>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-green-50 border-2 border-green-300 rounded"></div>
+                    <span className="font-medium text-green-800">
+                      🟢 Start/Início
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-red-50 border-2 border-red-300 rounded"></div>
+                    <span className="font-medium text-red-800">
+                      🔴 Stop/Fim
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-orange-50 border-2 border-orange-300 rounded"></div>
+                    <span className="font-medium text-orange-800">
+                      🟠 Pause
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-yellow-50 border-2 border-yellow-300 rounded"></div>
+                    <span className="font-medium text-yellow-800">
+                      🟡 Resume
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-blue-50 border-2 border-blue-300 rounded"></div>
+                    <span className="font-medium text-blue-800">
+                      🔵 Restart
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-purple-50 border-2 border-purple-300 rounded"></div>
+                    <span className="font-medium text-purple-800">
+                      🪝 Hook Events
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Navigation */}
-        <div className="flex justify-center gap-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            🏠 Página Inicial
-          </Link>
-          <Link
-            href="/direct"
-            className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            🔧 Uso Direto
-          </Link>
-          <Link
-            href="/advanced"
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            🚀 Avançado
-          </Link>
+        {/* Sistema de Eventos do VLibras Player Hook */}
+        <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
+          <h3 className="text-lg font-semibold text-blue-800 mb-4">
+            🪝 Sistema de Hooks VLibras Player
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-semibold text-blue-800 mb-2">
+                🪝 Hooks Disponíveis:
+              </h4>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• useVLibrasPlayer() - Hook principal</li>
+                <li>• Estados: isReady, isLoading, isPlaying</li>
+                <li>• Métodos: translate(), pause(), resume()</li>
+                <li>• Callbacks: onPlay, onPause, onStop</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-green-800 mb-2">
+                ✅ Funcionalidades Hook:
+              </h4>
+              <ul className="text-sm text-green-700 space-y-1">
+                <li>• Gerenciamento automático de estado</li>
+                <li>• Controles inteligentes via React</li>
+                <li>• Sistema de callbacks integrado</li>
+                <li>• Interface moderna com TypeScript</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-6 p-4 bg-blue-100 rounded-lg">
+            <h4 className="font-semibold text-blue-800 mb-2">
+              🪝 Fluxo do Hook useVLibrasPlayer:
+            </h4>
+            <ol className="text-sm text-blue-700 space-y-1">
+              <li>1. Hook inicializado com useVLibrasPlayer()</li>
+              <li>2. Estado isReady gerenciado automaticamente</li>
+              <li>3. Métodos translate(), pause(), etc. expostos</li>
+              <li>4. Callbacks executados via props do Hook</li>
+              <li>5. Estados derivados: canPause, canResume, etc.</li>
+              <li>6. Interface totalmente reativa com React</li>
+              <li>7. TypeScript para type safety completo</li>
+              <li>8. Integração nativa com Next.js</li>
+            </ol>
+          </div>
+        </div>
+
+        <div className="mt-8 text-center">
+          <p className="text-gray-600">
+            🪝 VLibras Player Hook Next.js - Sistema de hooks React organizado e
+            intuitivo!
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Interface visual com cores semânticas via Hook: Start=Verde,
+            Stop=Vermelho, Pause=Laranja, Resume=Amarelo, Restart=Azul,
+            Hook=Roxo
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 justify-center">
+            <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
+              useVLibrasPlayer Hook v2.4.3 ✅
+            </span>
+            <span className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs">
+              React State Management ✅
+            </span>
+            <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs">
+              TypeScript Integration ✅
+            </span>
+            <span className="px-2 py-1 bg-orange-50 text-orange-700 rounded text-xs">
+              Controles Inteligentes ✅
+            </span>
+          </div>
         </div>
       </div>
     </div>

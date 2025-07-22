@@ -1,249 +1,745 @@
-'use client';
+"use client";
 
-import React, { useRef, useState } from 'react';
-import { useVLibrasPlayer } from 'vlibras-player-nextjs';
-import Link from 'next/link';
+import React, { useRef, useState } from "react";
+import { VLibrasPlayer } from "vlibras-player-nextjs";
 
-export default function AdvancedExample() {
+/**
+ * 🎯 DEMONSTRAÇÃO OFICIAL DO VLIBRAS PLAYER
+ *
+ * Demonstração completa do VLibras Player para Next.js
+ *
+ * ✅ FUNCIONALIDADES:
+ * - Tradução automática de texto para Libras
+ * - Controles completos de reprodução (play, pause, resume, restart, stop)
+ * - Sistema avançado de eventos e callbacks
+ * - Interface visual com logs em tempo real
+ * - Cores semânticas para melhor experiência
+ * - Controles inteligentes com ativação contextual
+ */
+
+export default function VLibrasPlayerDemo() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [text, setText] = useState('');
+  const [player, setPlayer] = useState<VLibrasPlayer | null>(null);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const [eventLog, setEventLog] = useState<string[]>([]);
+  const [currentStatus, setCurrentStatus] = useState<string>("Não iniciado");
+  const [isPaused, setIsPaused] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [speed, setSpeed] = useState(1.0);
-  const [showSubtitles, setShowSubtitles] = useState(true);
 
-  const { 
-    translate, 
-    play, 
-    pause, 
-    stop, 
-    player, 
-    isLoading, 
-    error 
-  } = useVLibrasPlayer({
-    autoInit: true,
-    containerRef: containerRef as React.RefObject<HTMLElement> // ✅ Nova API v2.1.0
-  });
+  const addLog = (
+    message: string,
+    type:
+      | "info"
+      | "success"
+      | "error"
+      | "warning"
+      | "separator"
+      | "start"
+      | "stop"
+      | "pause"
+      | "resume"
+      | "restart" = "info"
+  ) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const emoji = {
+      info: "ℹ️",
+      success: "✅",
+      error: "❌",
+      warning: "⚠️",
+      separator: "📋",
+      start: "🟢",
+      stop: "🔴",
+      pause: "🟠",
+      resume: "🟡",
+      restart: "🔵",
+    }[type];
 
-  const handleTranslate = async () => {
-    if (!text.trim()) return;
-    
-    setIsTranslating(true);
+    setEventLog((prev) =>
+      [...prev, `${timestamp} ${emoji} ${message}`].slice(-50)
+    );
+  };
+
+  const initializePlayer = async () => {
+    if (player || !containerRef.current) return;
+
+    addLog("═══════════════════════════════════════", "separator");
+    addLog("🚀 INICIALIZANDO VLIBRAS PLAYER", "separator");
+    addLog("═══════════════════════════════════════", "separator");
+    setCurrentStatus("Inicializando...");
+
     try {
-      await translate(text);
+      const newPlayer = new VLibrasPlayer({
+        targetPath: "/vlibras/target",
+        region: "BR",
+        enableStats: true,
+
+        // 📋 CALLBACKS PRINCIPAIS
+        onLoad: () => {
+          addLog("CALLBACK: onLoad() - Player carregado", "success");
+          setIsPlayerReady(true);
+          setCurrentStatus("Pronto");
+        },
+        onTranslationStart: () => {
+          addLog("CALLBACK: onTranslationStart() - Tradução iniciada", "start");
+          setCurrentStatus("Traduzindo...");
+          setIsTranslating(true);
+        },
+        onTranslationEnd: () => {
+          addLog(
+            "CALLBACK: onTranslationEnd() - Tradução concluída",
+            "success"
+          );
+          setCurrentStatus("Concluído");
+          setIsTranslating(false);
+        },
+        onTranslationError: (error: string) => {
+          addLog(`CALLBACK: onTranslationError() - ${error}`, "warning");
+          setCurrentStatus("Erro na tradução");
+          setIsTranslating(false);
+        },
+        onPlay: () => {
+          addLog("CALLBACK: onPlay() - Reprodução iniciada", "start");
+          setCurrentStatus("Reproduzindo...");
+          setIsPaused(false);
+          setIsPlaying(true);
+        },
+        onPause: () => {
+          addLog("CALLBACK: onPause() - Reprodução pausada", "pause");
+          setCurrentStatus("Pausado");
+          setIsPaused(true);
+          setIsPlaying(false);
+        },
+        onResume: () => {
+          addLog("CALLBACK: onResume() - Reprodução retomada", "resume");
+          setCurrentStatus("Reproduzindo...");
+          setIsPaused(false);
+          setIsPlaying(true);
+        },
+        onRestart: () => {
+          addLog("CALLBACK: onRestart() - Animação reiniciada", "restart");
+          setCurrentStatus("Reiniciando...");
+          setIsPaused(false);
+          setIsPlaying(true);
+        },
+        onStop: () => {
+          addLog("CALLBACK: onStop() - Reprodução parada", "stop");
+          setCurrentStatus("Parado");
+          setIsPaused(false);
+          setIsPlaying(false);
+        },
+        onPlayerReady: () => {
+          addLog(
+            "CALLBACK: onPlayerReady() - Player completamente pronto",
+            "success"
+          );
+        },
+        onPlayerError: (error: string) => {
+          addLog(`CALLBACK: onPlayerError() - ${error}`, "error");
+          setCurrentStatus("Erro no player");
+        },
+      });
+
+      // 📋 EVENT LISTENERS DETALHADOS
+
+      // Eventos de sistema
+      newPlayer.addEventListener("load", () => {
+        addLog("EVENT: load - Player Unity carregado", "success");
+      });
+
+      newPlayer.addEventListener("error", (error: string) => {
+        addLog(`EVENT: error - ${error}`, "error");
+      });
+
+      // Eventos de tradução
+      newPlayer.addEventListener("translate:start", () => {
+        addLog(
+          "EVENT: translate:start - Processo de tradução iniciado",
+          "start"
+        );
+      });
+
+      newPlayer.addEventListener("translate:end", () => {
+        addLog(
+          "EVENT: translate:end - Processo de tradução finalizado",
+          "success"
+        );
+      });
+
+      // Eventos de animação
+      newPlayer.addEventListener("animation:play", () => {
+        addLog("EVENT: animation:play - Animação Unity iniciada", "start");
+      });
+
+      newPlayer.addEventListener("animation:pause", () => {
+        addLog("EVENT: animation:pause - Animação Unity pausada", "pause");
+      });
+
+      newPlayer.addEventListener("animation:resume", () => {
+        addLog("EVENT: animation:resume - Animação Unity retomada", "resume");
+      });
+
+      newPlayer.addEventListener("animation:restart", () => {
+        addLog(
+          "EVENT: animation:restart - Animação Unity reiniciada",
+          "restart"
+        );
+      });
+
+      newPlayer.addEventListener("animation:end", () => {
+        addLog("EVENT: animation:end - Animação Unity finalizada", "stop");
+      });
+
+      newPlayer.addEventListener("animation:progress", (progress: number) => {
+        if (progress % 25 === 0) {
+          addLog(`EVENT: animation:progress - ${progress}%`, "info");
+        }
+      });
+
+      // Eventos de glosa
+      newPlayer.addEventListener("gloss:start", () => {
+        addLog("EVENT: gloss:start - Reprodução da glosa iniciada", "start");
+      });
+
+      newPlayer.addEventListener("gloss:end", (length: number) => {
+        addLog(
+          `EVENT: gloss:end - Glosa finalizada (length: ${length})`,
+          "stop"
+        );
+      });
+
+      newPlayer.addEventListener(
+        "gloss:info",
+        (counter: number, length: number) => {
+          addLog(
+            `EVENT: gloss:info - Counter: ${counter}, Length: ${length}`,
+            "info"
+          );
+        }
+      );
+
+      // Eventos de avatar e interface
+      newPlayer.addEventListener("avatar:change", (avatar: string) => {
+        addLog(`EVENT: avatar:change - Avatar alterado: ${avatar}`, "info");
+      });
+
+      newPlayer.addEventListener("welcome:start", () => {
+        addLog(
+          "EVENT: welcome:start - Apresentação de boas-vindas iniciada",
+          "start"
+        );
+      });
+
+      newPlayer.addEventListener("welcome:end", (finished: boolean) => {
+        addLog(
+          `EVENT: welcome:end - Boas-vindas finalizada: ${finished}`,
+          "stop"
+        );
+      });
+
+      setPlayer(newPlayer);
+
+      // Carregar o player
+      addLog("Carregando Unity WebGL...", "info");
+      await newPlayer.load(containerRef.current);
+      addLog("Unity carregado com sucesso!", "success");
+      addLog("═══════════════════════════════════════", "separator");
+      addLog("✅ PLAYER PRONTO PARA USO!", "separator");
+      addLog("═══════════════════════════════════════", "separator");
     } catch (error) {
-      console.error('Erro na tradução:', error);
-    } finally {
-      setIsTranslating(false);
+      addLog(`Erro fatal: ${error}`, "error");
+      setCurrentStatus("Erro fatal");
     }
   };
 
-  const handleSpeedChange = (newSpeed: number) => {
-    setSpeed(newSpeed);
-    // Funcionalidade de velocidade pode ser implementada conforme a API da biblioteca
+  const testTranslation = async (text: string) => {
+    if (!player || !isPlayerReady) {
+      addLog("Player não está pronto para traduzir", "warning");
+      return;
+    }
+
+    addLog("═══════════════════════════════════════", "separator");
+    addLog(`🎯 TRADUZINDO: "${text}"`, "separator");
+    addLog("═══════════════════════════════════════", "separator");
+    addLog("📋 Sequência de eventos esperada:", "info");
+    addLog("1️⃣ translate:start (imediato)", "info");
+    addLog("2️⃣ animation:play (quando Unity inicia)", "info");
+    addLog("3️⃣ animation:progress (durante reprodução)", "info");
+    addLog("4️⃣ animation:end (quando Unity termina)", "info");
+    addLog("5️⃣ translate:end (quando tradução finaliza)", "info");
+    addLog("───────────────────────────────────────", "separator");
+    addLog("🔥 INICIANDO TRADUÇÃO...", "info");
+
+    try {
+      await player.translate(text);
+      addLog(`Tradução de "${text}" concluída!`, "success");
+      addLog("───────────────────────────────────────", "separator");
+      addLog("✅ TRADUÇÃO FINALIZADA!", "separator");
+      addLog("═══════════════════════════════════════", "separator");
+    } catch (error) {
+      addLog(`Erro na tradução: ${error}`, "error");
+      addLog("───────────────────────────────────────", "separator");
+      addLog("❌ TRADUÇÃO FINALIZADA COM ERRO!", "separator");
+      addLog("═══════════════════════════════════════", "separator");
+    }
   };
 
-  const toggleSubtitles = () => {
-    setShowSubtitles(!showSubtitles);
-    // Funcionalidade de legendas pode ser implementada conforme a API da biblioteca
-  };
+  const testTexts = [
+    "Olá, mundo!",
+    "Como você está?",
+    "VLibras é incrível!",
+    "Acessibilidade é fundamental!",
+  ];
+
+  // Lógica para habilitar/desabilitar botões inteligentemente
+  const canPause = isPlayerReady && isPlaying && !isPaused;
+  const canResume = isPlayerReady && isPaused;
+  const canStop = isPlayerReady && (isPlaying || isPaused);
+  const canRestart = isPlayerReady && (isPlaying || isPaused);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6 text-center">
-          🚀 VLibras Player - Exemplo Avançado
-        </h1>
-        
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
-          {/* Player */}
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-              Player VLibras
-            </h2>
-            <div 
-              ref={containerRef} 
-              className="w-full h-80 bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center mb-4"
-            >
-              {isLoading ? (
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                  <p className="text-gray-600 dark:text-gray-300">Carregando player...</p>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <p className="text-gray-500 dark:text-gray-400 mb-2">
-                    Player VLibras (Hook useVLibrasPlayer)
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    Player inicializado automaticamente
-                  </p>
-                </div>
-              )}
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            🎯 VLibras Player para Next.js
+          </h1>
+          <p className="text-gray-600">
+            Biblioteca moderna para tradução de texto em Libras
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2 justify-center">
+            <div className="px-4 py-2 bg-green-100 text-green-800 rounded-lg text-sm">
+              ✅ Controles Inteligentes
             </div>
-            
-            {error && (
-              <div className="mt-2 p-2 bg-red-50 dark:bg-red-900 rounded text-red-800 dark:text-red-200 text-xs">
-                {error}
-              </div>
-            )}
-          </div>
-
-          {/* Text Input */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Texto para traduzir:
-            </label>
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Digite o texto para traduzir para Libras..."
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              rows={3}
-            />
-          </div>
-
-          {/* Controls */}
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Playback Controls */}
-            <div>
-              <h3 className="text-lg font-medium text-gray-800 dark:text-white mb-3">
-                Controles de Reprodução
-              </h3>
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  onClick={handleTranslate}
-                  disabled={isTranslating || !text.trim() || isLoading}
-                  className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded font-medium transition-colors"
-                >
-                  {isTranslating ? 'Traduzindo...' : 'Traduzir'}
-                </button>
-                
-                <button
-                  onClick={() => play()}
-                  disabled={isLoading}
-                  className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded font-medium transition-colors"
-                >
-                  Play
-                </button>
-                
-                <button
-                  onClick={() => pause()}
-                  disabled={isLoading}
-                  className="bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white px-4 py-2 rounded font-medium transition-colors"
-                >
-                  Pausar
-                </button>
-                
-                <button
-                  onClick={() => stop()}
-                  disabled={isLoading}
-                  className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded font-medium transition-colors"
-                >
-                  Parar
-                </button>
-              </div>
+            <div className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm">
+              🎮 Sistema de Eventos
             </div>
-
-            {/* Settings */}
-            <div>
-              <h3 className="text-lg font-medium text-gray-800 dark:text-white mb-3">
-                Configurações
-              </h3>
-              
-              {/* Speed Control */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Velocidade: {speed.toFixed(1)}x
-                </label>
-                <input
-                  type="range"
-                  min="0.5"
-                  max="2.0"
-                  step="0.1"
-                  value={speed}
-                  onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>0.5x</span>
-                  <span>1.0x</span>
-                  <span>2.0x</span>
-                </div>
-              </div>
-
-              {/* Subtitle Toggle */}
-              <div className="mb-4">
-                <label className="flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showSubtitles}
-                    onChange={toggleSubtitles}
-                    className="mr-2"
-                  />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Mostrar legendas
-                  </span>
-                </label>
-              </div>
-
-              {/* Status Display */}
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-                <div className="text-sm">
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium text-gray-600 dark:text-gray-300">Status:</span>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      isLoading ? 'bg-yellow-100 text-yellow-800' : 
-                      error ? 'bg-red-100 text-red-800' : 
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      {isLoading ? 'Carregando' : error ? 'Erro' : 'Pronto'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium text-gray-600 dark:text-gray-300">Carregado:</span>
-                    <span className="text-gray-800 dark:text-gray-200">
-                      {player?.loaded ? 'Sim' : 'Não'}
-                    </span>
-                  </div>
-                </div>
-              </div>
+            <div className="px-4 py-2 bg-purple-100 text-purple-800 rounded-lg text-sm">
+              🎨 Interface Visual
             </div>
-          </div>
-
-          {/* Quick Examples */}
-          <div className="mt-6">
-            <h3 className="text-lg font-medium text-gray-800 dark:text-white mb-3">
-              Exemplos Rápidos
-            </h3>
-            <div className="grid md:grid-cols-2 gap-2">
-              {[
-                'Bem-vindos ao sistema de acessibilidade digital.',
-                'Esta é uma demonstração da tradução para Libras.',
-                'A tecnologia assistiva é fundamental para a inclusão.',
-                'VLibras torna conteúdo digital acessível para surdos.',
-                'Obrigado por testar nossa aplicação!',
-                'Acessibilidade é um direito de todos.'
-              ].map((example, index) => (
-                <button
-                  key={index}
-                  onClick={() => setText(example)}
-                  className="text-left p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-sm transition-colors"
-                >
-                  {example}
-                </button>
-              ))}
+            <div className="px-4 py-2 bg-orange-100 text-orange-800 rounded-lg text-sm">
+              📋 Logs em Tempo Real
             </div>
           </div>
         </div>
 
-        {/* Navigation */}
-        <div className="text-center">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded font-medium transition-colors"
-          >
-            ← Voltar ao exemplo básico
-          </Link>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Player */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-800">
+                🎬 VLibras Player
+              </h2>
+              <div className="text-right">
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    isPlayerReady
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {isPlayerReady ? "✅ Pronto" : "⏳ Carregando"}
+                </span>
+                <div className="text-xs text-gray-600 mt-1">
+                  Status: {currentStatus}
+                </div>
+                <div className="text-xs mt-1 flex gap-2">
+                  {isTranslating && (
+                    <span className="text-green-600">🔄 Traduzindo</span>
+                  )}
+                  {isPlaying && (
+                    <span className="text-blue-600">▶️ Reproduzindo</span>
+                  )}
+                  {isPaused && (
+                    <span className="text-orange-600">⏸️ Pausado</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div
+              ref={containerRef}
+              className="w-full h-80 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center mb-4"
+              style={{ minHeight: "320px" }}
+            >
+              {!player && (
+                <div className="text-center">
+                  <p className="text-gray-600 text-sm mb-3">
+                    Player não iniciado
+                  </p>
+                  <button
+                    onClick={initializePlayer}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    🚀 Inicializar Player VLibras
+                  </button>
+                </div>
+              )}
+
+              {player && !isPlayerReady && (
+                <div className="text-center">
+                  <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-3"></div>
+                  <p className="text-gray-600 text-sm">
+                    Carregando Unity WebGL...
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Controles */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                {testTexts.map((text, index) => (
+                  <button
+                    key={index}
+                    onClick={() => testTranslation(text)}
+                    disabled={!isPlayerReady}
+                    className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white px-3 py-2 rounded text-sm transition-colors"
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
+
+              {/* Controles com habilitação inteligente */}
+              <div className="grid grid-cols-5 gap-1">
+                <button
+                  onClick={() => player?.pause()}
+                  disabled={!canPause}
+                  className={`px-2 py-2 rounded text-xs transition-colors ${
+                    canPause
+                      ? "bg-orange-500 hover:bg-orange-600 text-white"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  title={
+                    canPause
+                      ? "Pausar reprodução"
+                      : "Não há reprodução para pausar"
+                  }
+                >
+                  ⏸️ Pause
+                </button>
+                <button
+                  onClick={() => player?.resume()}
+                  disabled={!canResume}
+                  className={`px-2 py-2 rounded text-xs transition-colors ${
+                    canResume
+                      ? "bg-yellow-500 hover:bg-yellow-600 text-white"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  title={
+                    canResume
+                      ? "Retomar reprodução pausada"
+                      : "Não há reprodução pausada"
+                  }
+                >
+                  ▶️ Resume
+                </button>
+                <button
+                  onClick={() => player?.restart()}
+                  disabled={!canRestart}
+                  className={`px-2 py-2 rounded text-xs transition-colors ${
+                    canRestart
+                      ? "bg-blue-500 hover:bg-blue-600 text-white"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  title={
+                    canRestart
+                      ? "Reiniciar animação atual"
+                      : "Não há animação para reiniciar"
+                  }
+                >
+                  🔄 Restart
+                </button>
+                <button
+                  onClick={() => player?.stop()}
+                  disabled={!canStop}
+                  className={`px-2 py-2 rounded text-xs transition-colors ${
+                    canStop
+                      ? "bg-red-500 hover:bg-red-600 text-white"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  title={
+                    canStop
+                      ? "Parar reprodução"
+                      : "Não há reprodução para parar"
+                  }
+                >
+                  ⏹️ Stop
+                </button>
+                <button
+                  onClick={() => {
+                    setEventLog([]);
+                    addLog(
+                      "═══════════════════════════════════════",
+                      "separator"
+                    );
+                    addLog(
+                      "🗑️ LOG LIMPO - PRONTO PARA NOVOS TESTES",
+                      "separator"
+                    );
+                    addLog(
+                      "═══════════════════════════════════════",
+                      "separator"
+                    );
+                  }}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-2 rounded text-xs transition-colors"
+                >
+                  🗑️ Limpar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Log de Eventos */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">
+                📋 Log de Eventos em Tempo Real
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const logContainer =
+                      document.querySelector(".log-container");
+                    if (logContainer) {
+                      logContainer.scrollTop = logContainer.scrollHeight;
+                    }
+                  }}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors"
+                >
+                  ⬇️ Final
+                </button>
+                <button
+                  onClick={() => {
+                    setEventLog([]);
+                    addLog(
+                      "═══════════════════════════════════════",
+                      "separator"
+                    );
+                    addLog(
+                      "🗑️ LOG LIMPO - PRONTO PARA NOVOS TESTES",
+                      "separator"
+                    );
+                    addLog(
+                      "═══════════════════════════════════════",
+                      "separator"
+                    );
+                  }}
+                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition-colors"
+                >
+                  🗑️ Limpar
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto log-container">
+              {eventLog.length === 0 ? (
+                <p className="text-gray-500 text-sm">Aguardando eventos...</p>
+              ) : (
+                <div className="space-y-1">
+                  {eventLog.map((log, index) => {
+                    // 🎨 Cores semânticas baseadas no tipo de log
+                    const isCallbackEvent = log.includes("CALLBACK:");
+                    const isEventLog = log.includes("EVENT:");
+                    const isSeparator =
+                      log.includes("═══") ||
+                      log.includes("───") ||
+                      log.includes("INICIANDO") ||
+                      log.includes("FINALIZADO") ||
+                      log.includes("CONCLUÍDA") ||
+                      log.includes("TESTANDO");
+                    const isError = log.includes("❌") || log.includes("💥");
+                    const isSuccess = log.includes("✅") || log.includes("🎉");
+                    const isWarning = log.includes("⚠️");
+
+                    // Cores semânticas por ação
+                    const isStart =
+                      log.includes("🟢") ||
+                      log.includes("iniciada") ||
+                      log.includes("iniciou");
+                    const isStop =
+                      log.includes("🔴") ||
+                      log.includes("parada") ||
+                      log.includes("terminou");
+                    const isPause =
+                      log.includes("🟠") || log.includes("pausada");
+                    const isResume =
+                      log.includes("🟡") || log.includes("retomada");
+                    const isRestart =
+                      log.includes("🔵") ||
+                      log.includes("reiniciada") ||
+                      log.includes("RESTART");
+
+                    let bgColor = "bg-white";
+                    let textColor = "text-gray-700";
+                    let borderColor = "border-gray-200";
+
+                    if (isSeparator) {
+                      bgColor = "bg-slate-50";
+                      textColor = "text-slate-800 font-semibold";
+                      borderColor = "border-slate-300";
+                    } else if (isRestart) {
+                      bgColor = "bg-blue-50";
+                      textColor = "text-blue-800 font-semibold";
+                      borderColor = "border-blue-300";
+                    } else if (isStart) {
+                      bgColor = "bg-green-50";
+                      textColor = "text-green-800";
+                      borderColor = "border-green-300";
+                    } else if (isStop) {
+                      bgColor = "bg-red-50";
+                      textColor = "text-red-800";
+                      borderColor = "border-red-300";
+                    } else if (isPause) {
+                      bgColor = "bg-orange-50";
+                      textColor = "text-orange-800";
+                      borderColor = "border-orange-300";
+                    } else if (isResume) {
+                      bgColor = "bg-yellow-50";
+                      textColor = "text-yellow-800";
+                      borderColor = "border-yellow-300";
+                    } else if (isCallbackEvent) {
+                      bgColor = "bg-purple-50";
+                      textColor = "text-purple-700";
+                      borderColor = "border-purple-200";
+                    } else if (isEventLog) {
+                      bgColor = "bg-cyan-50";
+                      textColor = "text-cyan-700";
+                      borderColor = "border-cyan-200";
+                    } else if (isError) {
+                      bgColor = "bg-red-100";
+                      textColor = "text-red-900";
+                      borderColor = "border-red-400";
+                    } else if (isSuccess) {
+                      bgColor = "bg-emerald-50";
+                      textColor = "text-emerald-700";
+                      borderColor = "border-emerald-200";
+                    } else if (isWarning) {
+                      bgColor = "bg-amber-50";
+                      textColor = "text-amber-800";
+                      borderColor = "border-amber-300";
+                    }
+
+                    return (
+                      <div
+                        key={index}
+                        className={`text-xs font-mono ${textColor} ${bgColor} p-2 rounded border ${borderColor} break-words`}
+                      >
+                        {log}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Legenda Melhorada */}
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+              <h4 className="text-base font-bold text-gray-800 mb-3">
+                🎨 Legenda dos Logs:
+              </h4>
+
+              <div className="mb-4">
+                <h5 className="text-sm font-semibold text-gray-700 mb-2">
+                  🔄 Cores por Ação:
+                </h5>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-green-50 border-2 border-green-300 rounded"></div>
+                    <span className="font-medium text-green-800">
+                      🟢 Start/Início
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-red-50 border-2 border-red-300 rounded"></div>
+                    <span className="font-medium text-red-800">
+                      🔴 Stop/Fim
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-orange-50 border-2 border-orange-300 rounded"></div>
+                    <span className="font-medium text-orange-800">
+                      🟠 Pause
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-yellow-50 border-2 border-yellow-300 rounded"></div>
+                    <span className="font-medium text-yellow-800">
+                      🟡 Resume
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-blue-50 border-2 border-blue-300 rounded"></div>
+                    <span className="font-medium text-blue-800">
+                      🔵 Restart
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Explicação da Correção do Callback Duplicado */}
+        <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
+          <h3 className="text-lg font-semibold text-blue-800 mb-4">
+            🔧 Correção do Callback Duplicado v2.4.0
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-semibold text-red-800 mb-2">
+                ❌ Problema v2.3.9:
+              </h4>
+              <ul className="text-sm text-red-700 space-y-1">
+                <li>• onRestart() chamado 2 vezes</li>
+                <li>• Callback direto + evento listener</li>
+                <li>• Duplicação confundia logs</li>
+                <li>• Fluxo de eventos inconsistente</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-green-800 mb-2">
+                ✅ Funcionalidades:
+              </h4>
+              <ul className="text-sm text-green-700 space-y-1">
+                <li>• Eventos únicos e consistentes</li>
+                <li>• Controles inteligentes e responsivos</li>
+                <li>• Sistema de logs visual organizado</li>
+                <li>• Interface moderna e acessível</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-6 p-4 bg-blue-100 rounded-lg">
+            <h4 className="font-semibold text-blue-800 mb-2">
+              🔄 Fluxo do Restart:
+            </h4>
+            <ol className="text-sm text-blue-700 space-y-1">
+              <li>1. Usuário clica em Restart</li>
+              <li>2. Sistema verifica se há tradução ativa</li>
+              <li>3. Marca estado de reinicialização</li>
+              <li>4. Emite evento de restart</li>
+              <li>5. Callback é executado uma única vez</li>
+              <li>6. Para reprodução atual</li>
+              <li>7. Aguarda processamento interno</li>
+              <li>8. Reproduz a tradução novamente</li>
+            </ol>
+          </div>
+        </div>
+
+        <div className="mt-8 text-center">
+          <p className="text-gray-600">
+            🎯 VLibras Player Next.js - Sistema de eventos organizado e
+            intuitivo!
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Interface visual com cores semânticas: Start=Verde, Stop=Vermelho,
+            Pause=Laranja, Resume=Amarelo, Restart=Azul
+          </p>
         </div>
       </div>
     </div>
