@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { useVLibrasPlayer } from "vlibras-player-nextjs";
+import Footer from "../../components/footer";
 
 /**
  * 🪝 DEMONSTRAÇÃO OFICIAL DO HOOK VLIBRAS PLAYER
@@ -196,6 +197,8 @@ export default function VLibrasPlayerHookDemo() {
     "Como você está?",
     "VLibras Hook é incrível!",
     "Acessibilidade com Hook!",
+    "Tradução automática via Hook",
+    "React e VLibras juntos!",
   ];
 
   // Estados derivados para controles inteligentes via Hook
@@ -273,7 +276,7 @@ export default function VLibrasPlayerHookDemo() {
 
             <div
               ref={containerRef}
-              className="w-full h-80 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center mb-4"
+              className="w-full h-80 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center mb-4 flex-col gap-10"
               style={{ minHeight: "320px" }}
             >
               {!isReady && !isLoading && !error && (
@@ -667,31 +670,8 @@ export default function VLibrasPlayerHookDemo() {
           </div>
         </div>
 
-        <div className="mt-8 text-center">
-          <p className="text-gray-600">
-            🪝 VLibras Player Hook Next.js - Sistema de hooks React organizado e
-            intuitivo!
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Interface visual com cores semânticas via Hook: Start=Verde,
-            Stop=Vermelho, Pause=Laranja, Resume=Amarelo, Restart=Azul,
-            Hook=Roxo
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 justify-center">
-            <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
-              useVLibrasPlayer Hook v2.4.3 ✅
-            </span>
-            <span className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs">
-              React State Management ✅
-            </span>
-            <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs">
-              TypeScript Integration ✅
-            </span>
-            <span className="px-2 py-1 bg-orange-50 text-orange-700 rounded text-xs">
-              Controles Inteligentes ✅
-            </span>
-          </div>
-        </div>
+        {/* Footer */}
+       <Footer />
       </div>
     </div>
   );

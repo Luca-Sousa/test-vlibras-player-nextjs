@@ -1,44 +1,115 @@
-'use client';
+"use client";
 
-import React, { useRef, useState } from 'react';
-import { useVLibrasPlayer } from 'vlibras-player-nextjs';
+import React, { useRef, useState, useCallback } from "react";
+import { useVLibrasPlayer } from "vlibras-player-nextjs";
+import Footer from "../components/footer";
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [text, setText] = useState('Olá! Bem-vindo ao teste do VLibras Player NextJS.');
+  const [text, setText] = useState(
+    "Olá! Bem-vindo ao teste do VLibras Player NextJS."
+  );
+  const [currentStatus, setCurrentStatus] = useState<string>("Não iniciado");
   const [isTranslating, setIsTranslating] = useState(false);
-  
-  const { 
-    translate, 
-    play, 
-    pause, 
-    stop, 
-    isLoading, 
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const [isCurrentlyPlaying, setIsCurrentlyPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Callbacks otimizados para performance
+  const handleOnLoad = useCallback(() => {
+    setIsPlayerReady(true);
+    setCurrentStatus("Pronto");
+  }, []);
+
+  const handleOnTranslationStart = useCallback(() => {
+    setIsTranslating(true);
+    setCurrentStatus("Traduzindo...");
+  }, []);
+
+  const handleOnTranslationEnd = useCallback(() => {
+    setIsTranslating(false);
+    setCurrentStatus("Tradução concluída");
+  }, []);
+
+  const handleOnTranslationError = useCallback(() => {
+    setIsTranslating(false);
+    setCurrentStatus("Erro na tradução");
+  }, []);
+
+  const handleOnPlay = useCallback(() => {
+    setIsCurrentlyPlaying(true);
+    setIsPaused(false);
+    setCurrentStatus("Reproduzindo...");
+  }, []);
+
+  const handleOnPause = useCallback(() => {
+    setIsCurrentlyPlaying(false);
+    setIsPaused(true);
+    setCurrentStatus("Pausado");
+  }, []);
+
+  const handleOnResume = useCallback(() => {
+    setIsCurrentlyPlaying(true);
+    setIsPaused(false);
+    setCurrentStatus("Reproduzindo...");
+  }, []);
+
+  const handleOnStop = useCallback(() => {
+    setIsCurrentlyPlaying(false);
+    setIsPaused(false);
+    setCurrentStatus("Parado");
+  }, []);
+
+  const handleOnRestart = useCallback(() => {
+    setIsCurrentlyPlaying(true);
+    setIsPaused(false);
+    setCurrentStatus("Reiniciando...");
+  }, []);
+
+  const {
+    isLoading,
     error,
+    isReady,
+    translate,
+    pause,
+    resume,
+    stop,
+    restart,
   } = useVLibrasPlayer({
     autoInit: true,
     containerRef: containerRef as React.RefObject<HTMLElement>,
+    // Configurações profissionais
+    targetPath: "/vlibras/target",
+    region: "BR",
+    enableStats: true,
+    // Callbacks para controle de estado
+    onLoad: handleOnLoad,
+    onTranslationStart: handleOnTranslationStart,
+    onTranslationEnd: handleOnTranslationEnd,
+    onTranslationError: handleOnTranslationError,
+    onPlay: handleOnPlay,
+    onPause: handleOnPause,
+    onResume: handleOnResume,
+    onStop: handleOnStop,
+    onRestart: handleOnRestart,
   });
 
   const handleTranslate = async () => {
-    if (!text.trim()) return;
-    
-    setIsTranslating(true);
+    if (!text.trim() || !isReady) return;
+
     try {
       await translate(text);
     } catch (error) {
-      console.error('Erro na tradução:', error);
-    } finally {
-      setIsTranslating(false);
+      console.error("Erro na tradução:", error);
     }
   };
 
   const predefinedTexts = [
-    'Olá! Como você está?',
-    'Bem-vindos ao VLibras Player NextJS!',
-    'Esta é uma demonstração da biblioteca de tradução para Libras.',
-    'A acessibilidade é fundamental para uma web inclusiva.',
-    'Obrigado por testar nossa biblioteca!'
+    "Olá! Como você está?",
+    "Bem-vindos ao VLibras Player NextJS!",
+    "Esta é uma demonstração da biblioteca de tradução para Libras.",
+    "A acessibilidade é fundamental para uma web inclusiva.",
+    "Obrigado por testar nossa biblioteca!",
   ];
 
   return (
@@ -54,7 +125,7 @@ export default function Home() {
           </p>
           <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900 px-4 py-2 rounded-full">
             <span className="text-sm font-medium text-green-800 dark:text-green-200">
-              Versão: 2.1.1 🔧 (Problema de duplicação corrigido!)
+              Versão: 2.5.1 🪝 (Implementação com Hooks Profissional!)
             </span>
           </div>
         </div>
@@ -95,10 +166,16 @@ export default function Home() {
                         ? "bg-yellow-100 text-yellow-800"
                         : error
                         ? "bg-red-100 text-red-800"
-                        : "bg-green-100 text-green-800"
+                        : isPlayerReady
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
                     }`}
                   >
-                    {isLoading ? "Carregando" : error ? "Erro" : "Pronto"}
+                    {isLoading 
+                      ? "Carregando" 
+                      : error 
+                      ? "Erro" 
+                      : currentStatus}
                   </span>
                 </div>
                 <div>
@@ -106,7 +183,7 @@ export default function Home() {
                     Versão:
                   </span>
                   <span className="ml-2 text-gray-800 dark:text-gray-200">
-                    v2.1.1 (Corrigida)
+                    v2.5.1 (Hooks)
                   </span>
                 </div>
               </div>
@@ -121,7 +198,7 @@ export default function Home() {
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={handleTranslate}
-                disabled={isTranslating || !text.trim() || isLoading}
+                disabled={isTranslating || !text.trim() || isLoading || !isReady || isCurrentlyPlaying || isPaused}
                 className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
               >
                 {isTranslating ? (
@@ -135,25 +212,37 @@ export default function Home() {
               </button>
 
               <button
-                onClick={() => play()}
-                disabled={isLoading}
-                className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-              >
-                ▶️ Play
-              </button>
-
-              <button
                 onClick={() => pause()}
-                disabled={isLoading}
-                className="bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                disabled={!isReady || !isCurrentlyPlaying || isPaused}
+                className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                title="Pausar reprodução"
               >
                 ⏸️ Pausar
               </button>
 
               <button
+                onClick={() => resume()}
+                disabled={!isReady || !isPaused}
+                className="bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                title="Continuar reprodução"
+              >
+                ▶️ Continuar
+              </button>
+
+              <button
+                onClick={() => restart()}
+                disabled={!isReady || (!isCurrentlyPlaying && !isPaused)}
+                className="bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                title="Reiniciar animação"
+              >
+                🔄 Reiniciar
+              </button>
+
+              <button
                 onClick={() => stop()}
-                disabled={isLoading}
+                disabled={!isReady || (!isCurrentlyPlaying && !isPaused)}
                 className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                title="Parar reprodução"
               >
                 ⏹️ Parar
               </button>
@@ -232,60 +321,7 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-            📚 Sobre a Biblioteca
-          </h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-4">
-            Esta é uma demonstração da biblioteca{" "}
-            <strong>vlibras-player-nextjs v2.1.1</strong>, uma solução moderna
-            para integração do VLibras em aplicações Next.js e React.
-          </p>
-          <div className="flex justify-center gap-4 flex-wrap">
-            <a
-              href="https://www.npmjs.com/package/vlibras-player-nextjs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              📦 NPM Package
-            </a>
-            <a
-              href="https://github.com/Luca-Sousa/vlibras-player-web-nextjs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              💻 GitHub
-            </a>
-            <a
-              href="/hook"
-              className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              ⚛️ Hook useVLibrasPlayer
-            </a>
-            <a
-              href="/advanced"
-              className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              🚀 Exemplo Avançado
-            </a>
-            <a
-              href="/direct"
-              className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              🔧 Uso Direto
-            </a>
-            <a
-              href="https://www.vlibras.gov.br/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              🤟 VLibras
-            </a>
-          </div>
-        </div>
+        <Footer />
       </div>
     </div>
   );

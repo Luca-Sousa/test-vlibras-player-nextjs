@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { VLibrasPlayer } from "vlibras-player-nextjs";
+import Footer from "../../components/footer";
 
 /**
  * 🎯 DEMONSTRAÇÃO OFICIAL DO VLIBRAS PLAYER
@@ -731,16 +732,8 @@ export default function VLibrasPlayerDemo() {
           </div>
         </div>
 
-        <div className="mt-8 text-center">
-          <p className="text-gray-600">
-            🎯 VLibras Player Next.js - Sistema de eventos organizado e
-            intuitivo!
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Interface visual com cores semânticas: Start=Verde, Stop=Vermelho,
-            Pause=Laranja, Resume=Amarelo, Restart=Azul
-          </p>
-        </div>
+        {/* Footer */}
+        <Footer />
       </div>
     </div>
   );
