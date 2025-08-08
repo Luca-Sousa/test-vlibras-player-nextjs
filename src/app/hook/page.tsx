@@ -56,12 +56,26 @@ export default function VLibrasPlayerHookDemo() {
     );
   };
 
+  // Função para pré-processar texto e remover pontuações problemáticas
+  const preprocessText = (text: string): string => {
+    return (
+      text
+        // Remove pontuações que ficam grudadas nas palavras
+        .replace(/[.,!?;:()[\]{}""''`´]/g, " ")
+        // Remove caracteres especiais problemáticos
+        .replace(/[^\w\sáàâãéèêíìîóòôõúùûçÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇ]/g, " ")
+        // Substitui múltiplos espaços por um único espaço
+        .replace(/\s+/g, " ")
+        // Remove espaços no início e fim
+        .trim()
+    );
+  };
+
   const {
     player,
     isLoading,
     error,
     isReady,
-    isTranslating,
     isPlaying,
     // Métodos principais
     translate,
@@ -146,8 +160,11 @@ export default function VLibrasPlayerHookDemo() {
       return;
     }
 
+    // Pré-processa o texto antes de enviar para o VLibras
+    const processedText = preprocessText(text);
+
     addLog("═══════════════════════════════════════", "separator");
-    addLog(`🪝 TRADUZINDO VIA HOOK: "${text}"`, "separator");
+    addLog(`🪝 TRADUZINDO VIA HOOK: "${processedText}"`, "separator");
     addLog("═══════════════════════════════════════", "separator");
     addLog("📋 Sequência de eventos esperada via Hook:", "info");
     addLog("1️⃣ onTranslationStart (via Hook)", "info");
@@ -159,8 +176,8 @@ export default function VLibrasPlayerHookDemo() {
     addLog("🔥 INICIANDO TRADUÇÃO VIA HOOK...", "info");
 
     try {
-      await translate(text);
-      addLog(`Hook: Tradução de "${text}" concluída!`, "success");
+      await translate(processedText);
+      addLog(`Hook: Tradução de "${processedText}" concluída!`, "success");
       addLog("───────────────────────────────────────", "separator");
       addLog("✅ TRADUÇÃO VIA HOOK FINALIZADA!", "separator");
       addLog("═══════════════════════════════════════", "separator");
@@ -196,9 +213,9 @@ export default function VLibrasPlayerHookDemo() {
     "Olá, mundo!",
     "Como você está?",
     "VLibras Hook é incrível!",
-    "Acessibilidade com Hook!",
-    "Tradução automática via Hook",
-    "React e VLibras juntos!",
+    "Acessibilidade (fundamental)!",
+    "Tradução: automática via Hook",
+    "React & VLibras = perfeito!",
   ];
 
   // Estados derivados para controles inteligentes via Hook
@@ -256,21 +273,6 @@ export default function VLibrasPlayerHookDemo() {
                 <div className="text-xs text-gray-600 mt-1">
                   Status: {currentStatus}
                 </div>
-                <div className="text-xs mt-1 flex gap-2">
-                  {isLoading && (
-                    <span className="text-blue-600">🔄 Carregando</span>
-                  )}
-                  {isTranslating && (
-                    <span className="text-green-600">🔄 Traduzindo</span>
-                  )}
-                  {isPlaying && (
-                    <span className="text-blue-600">▶️ Reproduzindo</span>
-                  )}
-                  {isPaused && (
-                    <span className="text-orange-600">⏸️ Pausado</span>
-                  )}
-                  {error && <span className="text-red-600">❌ Erro</span>}
-                </div>
               </div>
             </div>
 
@@ -289,35 +291,6 @@ export default function VLibrasPlayerHookDemo() {
                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                   >
                     🪝 Inicializar Player VLibras via Hook
-                  </button>
-                </div>
-              )}
-
-              {isLoading && (
-                <div className="text-center">
-                  <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-3"></div>
-                  <p className="text-gray-600 text-sm">
-                    Carregando Unity WebGL via Hook...
-                  </p>
-                </div>
-              )}
-
-              {isReady && (
-                <div className="text-center">
-                  <p className="text-gray-600 text-sm">
-                    ✅ Player Hook pronto para tradução!
-                  </p>
-                </div>
-              )}
-
-              {error && (
-                <div className="text-center">
-                  <p className="text-red-600 text-sm mb-3">❌ Erro: {error}</p>
-                  <button
-                    onClick={handleInitializePlayer}
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    � Tentar Novamente
                   </button>
                 </div>
               )}
@@ -671,7 +644,7 @@ export default function VLibrasPlayerHookDemo() {
         </div>
 
         {/* Footer */}
-       <Footer />
+        <Footer />
       </div>
     </div>
   );

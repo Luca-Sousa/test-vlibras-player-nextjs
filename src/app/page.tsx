@@ -126,6 +126,7 @@ export default function Home() {
     "Esta é uma demonstração da biblioteca de tradução para Libras.",
     "A acessibilidade é fundamental para uma web inclusiva.",
     "Obrigado por testar nossa biblioteca!",
+    "Teste: com pontuação & símbolos (especiais)!",
   ];
 
   return (

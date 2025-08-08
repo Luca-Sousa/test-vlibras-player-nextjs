@@ -26,6 +26,7 @@ export default function VLibrasPlayerDemo() {
   const [currentStatus, setCurrentStatus] = useState<string>("Não iniciado");
   const [isPaused, setIsPaused] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isTranslating, setIsTranslating] = useState(false);
 
   const addLog = (
@@ -58,6 +59,21 @@ export default function VLibrasPlayerDemo() {
 
     setEventLog((prev) =>
       [...prev, `${timestamp} ${emoji} ${message}`].slice(-50)
+    );
+  };
+
+  // Função para pré-processar texto e remover pontuações problemáticas
+  const preprocessText = (text: string): string => {
+    return (
+      text
+        // Remove pontuações que ficam grudadas nas palavras
+        .replace(/[.,!?;:()[\]{}""''`´]/g, " ")
+        // Remove caracteres especiais problemáticos
+        .replace(/[^\w\sáàâãéèêíìîóòôõúùûçÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇ]/g, " ")
+        // Substitui múltiplos espaços por um único espaço
+        .replace(/\s+/g, " ")
+        // Remove espaços no início e fim
+        .trim()
     );
   };
 
@@ -259,8 +275,11 @@ export default function VLibrasPlayerDemo() {
       return;
     }
 
+    // Pré-processa o texto antes de enviar para o VLibras
+    const processedText = preprocessText(text);
+
     addLog("═══════════════════════════════════════", "separator");
-    addLog(`🎯 TRADUZINDO: "${text}"`, "separator");
+    addLog(`🎯 TRADUZINDO: "${processedText}"`, "separator");
     addLog("═══════════════════════════════════════", "separator");
     addLog("📋 Sequência de eventos esperada:", "info");
     addLog("1️⃣ translate:start (imediato)", "info");
@@ -272,8 +291,8 @@ export default function VLibrasPlayerDemo() {
     addLog("🔥 INICIANDO TRADUÇÃO...", "info");
 
     try {
-      await player.translate(text);
-      addLog(`Tradução de "${text}" concluída!`, "success");
+      await player.translate(processedText);
+      addLog(`Tradução de "${processedText}" concluída!`, "success");
       addLog("───────────────────────────────────────", "separator");
       addLog("✅ TRADUÇÃO FINALIZADA!", "separator");
       addLog("═══════════════════════════════════════", "separator");
@@ -289,7 +308,9 @@ export default function VLibrasPlayerDemo() {
     "Olá, mundo!",
     "Como você está?",
     "VLibras é incrível!",
-    "Acessibilidade é fundamental!",
+    "Acessibilidade: fundamental!",
+    "Teste (com pontuação)",
+    "Símbolo & caractere especial",
   ];
 
   // Lógica para habilitar/desabilitar botões inteligentemente
@@ -345,17 +366,6 @@ export default function VLibrasPlayerDemo() {
                 <div className="text-xs text-gray-600 mt-1">
                   Status: {currentStatus}
                 </div>
-                <div className="text-xs mt-1 flex gap-2">
-                  {isTranslating && (
-                    <span className="text-green-600">🔄 Traduzindo</span>
-                  )}
-                  {isPlaying && (
-                    <span className="text-blue-600">▶️ Reproduzindo</span>
-                  )}
-                  {isPaused && (
-                    <span className="text-orange-600">⏸️ Pausado</span>
-                  )}
-                </div>
               </div>
             </div>
 
@@ -375,15 +385,6 @@ export default function VLibrasPlayerDemo() {
                   >
                     🚀 Inicializar Player VLibras
                   </button>
-                </div>
-              )}
-
-              {player && !isPlayerReady && (
-                <div className="text-center">
-                  <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-3"></div>
-                  <p className="text-gray-600 text-sm">
-                    Carregando Unity WebGL...
-                  </p>
                 </div>
               )}
             </div>
@@ -680,55 +681,6 @@ export default function VLibrasPlayerDemo() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Explicação da Correção do Callback Duplicado */}
-        <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-800 mb-4">
-            🔧 Correção do Callback Duplicado v2.4.0
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-semibold text-red-800 mb-2">
-                ❌ Problema v2.3.9:
-              </h4>
-              <ul className="text-sm text-red-700 space-y-1">
-                <li>• onRestart() chamado 2 vezes</li>
-                <li>• Callback direto + evento listener</li>
-                <li>• Duplicação confundia logs</li>
-                <li>• Fluxo de eventos inconsistente</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-green-800 mb-2">
-                ✅ Funcionalidades:
-              </h4>
-              <ul className="text-sm text-green-700 space-y-1">
-                <li>• Eventos únicos e consistentes</li>
-                <li>• Controles inteligentes e responsivos</li>
-                <li>• Sistema de logs visual organizado</li>
-                <li>• Interface moderna e acessível</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-6 p-4 bg-blue-100 rounded-lg">
-            <h4 className="font-semibold text-blue-800 mb-2">
-              🔄 Fluxo do Restart:
-            </h4>
-            <ol className="text-sm text-blue-700 space-y-1">
-              <li>1. Usuário clica em Restart</li>
-              <li>2. Sistema verifica se há tradução ativa</li>
-              <li>3. Marca estado de reinicialização</li>
-              <li>4. Emite evento de restart</li>
-              <li>5. Callback é executado uma única vez</li>
-              <li>6. Para reprodução atual</li>
-              <li>7. Aguarda processamento interno</li>
-              <li>8. Reproduz a tradução novamente</li>
-            </ol>
           </div>
         </div>
 
