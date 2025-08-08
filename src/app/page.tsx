@@ -94,11 +94,27 @@ export default function Home() {
     onRestart: handleOnRestart,
   });
 
+  // Função para pré-processar texto e remover pontuações problemáticas
+  const preprocessText = (text: string): string => {
+    return text
+      // Remove pontuações que ficam grudadas nas palavras
+      .replace(/[.,!?;:()[\]{}""''`´]/g, ' ')
+      // Remove caracteres especiais problemáticos
+      .replace(/[^\w\sáàâãéèêíìîóòôõúùûçÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇ]/g, ' ')
+      // Substitui múltiplos espaços por um único espaço
+      .replace(/\s+/g, ' ')
+      // Remove espaços no início e fim
+      .trim();
+  };
+
   const handleTranslate = async () => {
     if (!text.trim() || !isReady) return;
 
+    // Pré-processa o texto antes de enviar para o VLibras
+    const processedText = preprocessText(text);
+    
     try {
-      await translate(text);
+      await translate(processedText);
     } catch (error) {
       console.error("Erro na tradução:", error);
     }
@@ -125,7 +141,7 @@ export default function Home() {
           </p>
           <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900 px-4 py-2 rounded-full">
             <span className="text-sm font-medium text-green-800 dark:text-green-200">
-              Versão: 2.5.1 🪝 (Implementação com Hooks Profissional!)
+              Versão: 2.5.1
             </span>
           </div>
         </div>
